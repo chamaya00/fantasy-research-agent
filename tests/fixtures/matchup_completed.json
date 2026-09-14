@@ -1,0 +1,103 @@
+{
+  "fantasy_content": {
+    "matchup": {
+      "week": "5",
+      "status": "postevent",
+      "teams": {
+        "count": 2,
+        "0": {
+          "team": [
+            [
+              {"team_key": "414.l.123456.t.1"},
+              {"team_id": "1"},
+              {"name": "Gridiron Gurus"}
+            ],
+            {
+              "team_points": {"coverage_type": "week", "week": "5", "total": "112.4"}
+            },
+            {
+              "roster": {
+                "players": {
+                  "count": 2,
+                  "0": {
+                    "player": [
+                      [
+                        {"player_key": "414.p.30123"},
+                        {"player_id": "30123"},
+                        {"name": {"full": "Patrick Mahomes"}},
+                        {"display_position": "QB"}
+                      ],
+                      {
+                        "player_stats": {
+                          "stats": [
+                            {"stat": {"stat_id": "4", "name": "Passing Yards", "value": "315"}},
+                            {"stat": {"stat_id": "5", "name": "Passing Touchdowns", "value": "3"}}
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "1": {
+                    "player": [
+                      [
+                        {"player_key": "414.p.31234"},
+                        {"player_id": "31234"},
+                        {"name": {"full": "Travis Kelce"}},
+                        {"display_position": "TE"}
+                      ],
+                      {
+                        "player_stats": {
+                          "stats": [
+                            {"stat": {"stat_id": "12", "name": "Receiving Yards", "value": "98"}},
+                            {"stat": {"stat_id": "13", "name": "Receiving Touchdowns", "value": "1"}}
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "1": {
+          "team": [
+            [
+              {"team_key": "414.l.123456.t.2"},
+              {"team_id": "2"},
+              {"name": "Couch Commanders"}
+            ],
+            {
+              "team_points": {"coverage_type": "week", "week": "5", "total": "97.8"}
+            },
+            {
+              "roster": {
+                "players": {
+                  "count": 1,
+                  "0": {
+                    "player": [
+                      [
+                        {"player_key": "414.p.29123"},
+                        {"player_id": "29123"},
+                        {"name": {"full": "Josh Allen"}},
+                        {"display_position": "QB"}
+                      ],
+                      {
+                        "player_stats": {
+                          "stats": [
+                            {"stat": {"stat_id": "4", "name": "Passing Yards", "value": "245"}},
+                            {"stat": {"stat_id": "5", "name": "Passing Touchdowns", "value": "1"}}
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

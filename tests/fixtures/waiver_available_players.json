@@ -1,0 +1,33 @@
+{
+  "fantasy_content": {
+    "league": {
+      "players": {
+        "count": 2,
+        "0": {
+          "player": [
+            [
+              {"player_key": "414.p.32001"},
+              {"player_id": "32001"},
+              {"name": {"full": "Zach Charbonnet"}},
+              {"display_position": "RB"},
+              {"ownership": {"ownership_type": "waivers", "owner_team_name": null}},
+              {"percent_owned": {"coverage_type": "week", "value": "42"}}
+            ]
+          ]
+        },
+        "1": {
+          "player": [
+            [
+              {"player_key": "414.p.32045"},
+              {"player_id": "32045"},
+              {"name": {"full": "Jaylen Warren"}},
+              {"display_position": "RB"},
+              {"ownership": {"ownership_type": "freeagents", "owner_team_name": null}},
+              {"percent_owned": {"coverage_type": "week", "value": "18"}}
+            ]
+          ]
+        }
+      }
+    }
+  }
+}
