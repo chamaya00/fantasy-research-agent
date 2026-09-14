@@ -7,15 +7,19 @@ projections to help with lineup and waiver decisions.
 
 ## Stack
 
-Python. No dependencies or entry point exist yet - the first engineer to
-touch this repository chooses the concrete libraries and updates this
-section when it does.
+Python. The Yahoo data layer (`yahoo_data/`) is standard library only -
+`urllib.request` for HTTP/OAuth, `json`, `dataclasses` - no Yahoo SDK or
+third-party HTTP client. `pytest` is the one added dependency, for tests
+(see `docs/decisions/0001-pytest-for-tests.md`). No entry point exists yet
+- the engineer who adds the summarization/recommendation logic that
+consumes this data layer chooses how it's invoked and updates the Dev line
+below.
 
 ## Commands
 
 - Install: `pip install -r requirements.txt` (add dependencies here as they're introduced)
-- Dev: not yet defined - the first engineer PR should add an entry point and update this line
-- Checks CI runs: none yet. `.github/workflows/ci.yml` ships a placeholder gate that checks the scaffolding below is intact. Replace it with `pytest` (plus lint/typecheck if desired) the moment code lands, per the comment at the top of that file.
+- Dev: not yet defined - the first engineer PR to add an entry point should update this line
+- Checks CI runs: `pytest` (from repo root). CI itself still runs the placeholder scaffolding gate in `.github/workflows/ci.yml` until a human replaces it with `pytest`, per that file's comment - no agent may edit that file.
 
 The checks above are what CI runs once the gate is real. Until then it is
 not: `.github/workflows/ci.yml` ships a placeholder that checks the scaffolding
