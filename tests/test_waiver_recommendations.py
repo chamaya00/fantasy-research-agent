@@ -4,7 +4,9 @@ from pathlib import Path
 from backend.waiver_recommendations import recommend_waivers
 from yahoo_data.parsing import parse_available_players
 
-FIXTURE = Path(__file__).parent / "fixtures" / "waiver_available_players.json"
+FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "waiver_available_players.json").read_text()
+)
 
 
 def _echo(prompt: str) -> str:
@@ -15,7 +17,7 @@ def _echo(prompt: str) -> str:
 
 
 def test_recommend_waivers_ranks_and_grounds_each_reason_in_fixture_data():
-    players = parse_available_players(json.loads(FIXTURE.read_text()))
+    players = parse_available_players(FIXTURE)
     fixture_names = {player.name for player in players}
 
     recommendations = recommend_waivers(players, complete=_echo)

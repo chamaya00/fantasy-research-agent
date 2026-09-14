@@ -4,7 +4,9 @@ from pathlib import Path
 from backend.matchup_summary import summarize_matchup
 from yahoo_data.parsing import parse_matchup
 
-FIXTURE = Path(__file__).parent / "fixtures" / "matchup_completed.json"
+FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "matchup_completed.json").read_text()
+)
 
 
 def _echo(prompt: str) -> str:
@@ -16,7 +18,7 @@ def _echo(prompt: str) -> str:
 
 
 def test_summarize_matchup_references_real_scores_and_a_named_player():
-    matchup = parse_matchup(json.loads(FIXTURE.read_text()))
+    matchup = parse_matchup(FIXTURE)
 
     summary = summarize_matchup(matchup, complete=_echo)
 
