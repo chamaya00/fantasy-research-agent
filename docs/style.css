@@ -1,0 +1,41 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: #1a1a1a;
+}
+
+section {
+  margin-bottom: 2.5rem;
+}
+
+h2 {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+}
+
+.status-loading {
+  color: #555;
+}
+
+.status-error {
+  color: #a11;
+}
+
+.status-empty {
+  color: #555;
+  font-style: italic;
+}
+
+.waiver-list {
+  padding-left: 1.25rem;
+}
+
+.waiver-list li {
+  margin-bottom: 0.75rem;
+}
+
+.retry {
+  margin-top: 0.5rem;
+}
