@@ -10,15 +10,19 @@ projections to help with lineup and waiver decisions.
 Python. The Yahoo data layer (`yahoo_data/`) is standard library only -
 `urllib.request` for HTTP/OAuth, `json`, `dataclasses` - no Yahoo SDK or
 third-party HTTP client. `pytest` is the one added dependency, for tests
-(see `docs/decisions/0001-pytest-for-tests.md`). No entry point exists yet
-- the engineer who adds the summarization/recommendation logic that
-consumes this data layer chooses how it's invoked and updates the Dev line
-below.
+(see `docs/decisions/0001-pytest-for-tests.md`). The summarization/
+recommendation logic (`backend/`) that consumes the data layer runs as two
+Modal Functions calling OpenRouter's free tier for LLM inference (see
+`docs/decisions/0002-modal-for-batch-functions.md` and
+`docs/decisions/0003-openrouter-free-tier-for-llm-inference.md`); `backend/`
+is the entry point, and needs `modal` (also in `requirements.txt`),
+a Modal account, and an `OPENROUTER_API_KEY` to actually deploy or call
+live - none of which the test suite requires.
 
 ## Commands
 
 - Install: `pip install -r requirements.txt` (add dependencies here as they're introduced)
-- Dev: not yet defined - the first engineer PR to add an entry point should update this line
+- Dev: `modal deploy backend/app.py` (requires a Modal account and a Modal secret named `openrouter` providing `OPENROUTER_API_KEY`); `modal run backend/app.py::matchup_summary_function` / `::waiver_recommendation_function` to invoke one function ephemerally against real Yahoo/OpenRouter data without a full deploy
 - Checks CI runs: `pytest` (from repo root). CI itself still runs the placeholder scaffolding gate in `.github/workflows/ci.yml` until a human replaces it with `pytest`, per that file's comment - no agent may edit that file.
 
 The checks above are what CI runs once the gate is real. Until then it is
