@@ -7,23 +7,53 @@ projections to help with lineup and waiver decisions.
 
 ## Stack
 
-Python. The Yahoo data layer (`yahoo_data/`) is standard library only -
-`urllib.request` for HTTP/OAuth, `json`, `dataclasses` - no Yahoo SDK or
-third-party HTTP client. `pytest` is the one added dependency, for tests
-(see `docs/decisions/0001-pytest-for-tests.md`). The summarization/
-recommendation logic (`backend/`) that consumes the data layer runs as two
-Modal Functions calling OpenRouter's free tier for LLM inference (see
-`docs/decisions/0002-modal-for-batch-functions.md` and
+Python and, since #6, a static HTML/CSS/JS frontend - two layers, each with
+its own install/run/test story below.
+
+**Backend (Python).** The Yahoo data layer (`yahoo_data/`) is standard
+library only - `urllib.request` for HTTP/OAuth, `json`, `dataclasses` - no
+Yahoo SDK or third-party HTTP client. `pytest` is the one added dependency,
+for tests (see `docs/decisions/0001-pytest-for-tests.md`). The
+summarization/recommendation logic (`backend/`) that consumes the data
+layer runs as Modal Functions calling OpenRouter's free tier for LLM
+inference (see `docs/decisions/0002-modal-for-batch-functions.md` and
 `docs/decisions/0003-openrouter-free-tier-for-llm-inference.md`); `backend/`
 is the entry point, and needs `modal` (also in `requirements.txt`),
 a Modal account, and an `OPENROUTER_API_KEY` to actually deploy or call
-live - none of which the test suite requires.
+live - none of which the test suite requires. Two of those Modal Functions
+are also reachable over HTTP (`backend/app.py`'s `web`, a small FastAPI app;
+see `docs/decisions/0004-fastapi-for-http-endpoints.md`) - FastAPI lives
+only in the Modal container image, not in `requirements.txt`.
+
+**Frontend (`docs/`).** Plain HTML/CSS/JS, no bundler and no package.json -
+deliberately buildless (see `docs/decisions/`) so it can be served as
+committed, e.g. by pointing GitHub Pages at this folder. `docs/render.js`'s
+rendering functions are tested with Node's built-in test runner
+(`node:test`/`node:assert`) - no third-party JS test framework, matching
+the backend's own preference for the standard library over a dependency
+where the standard library does the job. `docs/config.js` holds the two
+Modal endpoint URLs a human fills in after deploying the backend.
 
 ## Commands
 
-- Install: `pip install -r requirements.txt` (add dependencies here as they're introduced)
-- Dev: `modal deploy backend/app.py` (requires a Modal account and a Modal secret named `openrouter` providing `OPENROUTER_API_KEY`); `modal run backend/app.py::matchup_summary_function` / `::waiver_recommendation_function` to invoke one function ephemerally against real Yahoo/OpenRouter data without a full deploy
-- Checks CI runs: `pytest` (from repo root). CI itself still runs the placeholder scaffolding gate in `.github/workflows/ci.yml` until a human replaces it with `pytest`, per that file's comment - no agent may edit that file.
+- Install (backend): `pip install -r requirements.txt` (add dependencies here as they're introduced)
+- Install (frontend): none - no package.json, nothing to install
+- Dev (backend): `modal deploy backend/app.py` (requires a Modal account and a Modal secret named `openrouter` providing `OPENROUTER_API_KEY`); `modal run backend/app.py::matchup_summary_function` / `::waiver_recommendation_function` to invoke one function ephemerally against real Yahoo/OpenRouter data without a full deploy; once deployed, `modal deploy` prints the base URL for `web` - put it in `docs/config.js`
+- Run (frontend) locally: serve `docs/` with any static file server, e.g. `python3 -m http.server --directory docs` (a plain `file://` open won't work - `docs/index.html` loads `docs/app.js` as an ES module, which browsers block from `file://`); then open the printed `localhost` URL
+- Build (frontend): none - `docs/` is served as committed, there is no build step
+- Checks CI runs: `pytest` (from repo root) and `node --test docs/tests/` (from repo root, requires only Node - no install step). CI itself still runs the placeholder scaffolding gate in `.github/workflows/ci.yml` until a human replaces it with these, per that file's comment - no agent may edit that file.
+- Deploy (frontend): a human enables GitHub Pages in repository Settings -> Pages, pointing at the `main` branch's `/docs` folder - a one-time, repository-settings action no agent role can perform (see `docs/decisions/`). After that, every push to `main` that touches `docs/` publishes automatically; there is no separate publish command and no GitHub Actions workflow involved, by design (agents may not touch `.github/workflows/`, and this frontend is buildless specifically so it never needs one).
+
+Testing a live deployment's HTTP endpoints (rather than the pytest-covered
+parsing/summarizing logic behind them) is a documented `curl`, not a pytest
+test - `backend/app.py` is not imported by the test suite (see ADR 0004),
+consistent with ADR 0002's reasoning for the SDK-only functions:
+
+```
+curl -X POST https://<your-workspace>--fantasy-research-agent-web.modal.run/matchup-summary \
+  -H "Content-Type: application/json" \
+  -d @tests/fixtures/matchup_completed.json
+```
 
 The checks above are what CI runs once the gate is real. Until then it is
 not: `.github/workflows/ci.yml` ships a placeholder that checks the scaffolding
