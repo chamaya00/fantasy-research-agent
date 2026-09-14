@@ -61,7 +61,7 @@ def web():
     each function as its own web endpoint, so both routes share one CORS
     setup for the browser's preflight `OPTIONS` request - see ADR 0004.
     """
-    from fastapi import FastAPI
+    from fastapi import Body, FastAPI
     from fastapi.middleware.cors import CORSMiddleware
 
     web_app = FastAPI()
@@ -72,8 +72,12 @@ def web():
         allow_headers=["Content-Type"],
     )
 
+    # `Body(...)` (not `embed=True`) takes the whole POST body as this one
+    # field, unwrapped - so the request body is the raw Yahoo payload dict
+    # itself, the same shape `matchup_summary_function` takes, not
+    # `{"matchup_payload": {...}}`.
     @web_app.post("/matchup-summary")
-    def matchup_summary_endpoint(matchup_payload: dict) -> dict:
+    def matchup_summary_endpoint(matchup_payload: dict = Body(...)) -> dict:
         """POST a Yahoo matchup JSON payload; see `matchup_summary_function` for the shape.
 
         Returns `{"status": "no_matchup"}` for an empty payload, otherwise
@@ -95,7 +99,7 @@ def web():
         }
 
     @web_app.post("/waiver-recommendations")
-    def waiver_recommendation_endpoint(available_players_payload: dict) -> dict:
+    def waiver_recommendation_endpoint(available_players_payload: dict = Body(...)) -> dict:
         """POST a Yahoo available-players JSON payload; see `waiver_recommendation_function` for the shape.
 
         Returns `{"recommendations": [...]}`, each entry shaped like
