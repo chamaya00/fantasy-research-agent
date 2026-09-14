@@ -66,7 +66,8 @@ jobs:
   ci:
     uses: chamaya00/agent-factory/.github/workflows/ci.yml@v1.26.0
     with:
-      check-name: 'pytest'
+      check-name: 'tests'
       commands: |
         pip install -r requirements.txt
         pytest
+        node --test docs/tests/render.test.mjs
