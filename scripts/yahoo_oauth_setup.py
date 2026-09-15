@@ -10,10 +10,21 @@ You need a Yahoo app first (https://developer.yahoo.com/apps/create/,
 Fantasy Sports - Read permission), with a Redirect URI registered that
 matches what you enter below exactly - trailing slash and all.
 
-Nothing typed here is written to disk. If you'd rather set the secrets by
-hand, decline the prompt at the end and copy the printed refresh token into
-https://github.com/chamaya00/fantasy-research-agent/settings/secrets/actions/new
-yourself.
+Picks up YAHOO_CLIENT_ID / YAHOO_CLIENT_SECRET from the environment if
+they're already there, and only prompts for whichever is missing. Note:
+a repo secret set under Settings -> Secrets and variables -> Actions is
+NOT automatically available here - that's a separate store from Settings
+-> Secrets and variables -> Codespaces, and only the latter (repo or your
+account level) gets injected as an env var into a Codespace terminal, and
+only into a Codespace created or rebuilt after the secret was added. If
+neither is set that way, this just prompts for them instead - nothing
+breaks either way.
+
+The authorization URL, and the credentials/token if they can't be set via
+`gh`, are written to text files under scripts/.oauth_output/ (gitignored)
+instead of only being printed to the terminal, so you can open and copy
+from the Codespaces editor. Offers to delete that directory once you're
+done with it - it holds real secrets in plain text until then.
 
 Usage:
     python3 scripts/yahoo_oauth_setup.py
@@ -22,15 +33,19 @@ Usage:
 import base64
 import getpass
 import json
+import os
+import shutil
 import subprocess
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 DEFAULT_REDIRECT_URI = "https://chamaya00.github.io/fantasy-research-agent/"
 AUTH_URL = "https://api.login.yahoo.com/oauth2/request_auth"
 TOKEN_URL = "https://api.login.yahoo.com/oauth2/get_token"
+OUTPUT_DIR = Path(__file__).parent / ".oauth_output"
 
 
 def require(label: str, value: str) -> str:
@@ -38,6 +53,24 @@ def require(label: str, value: str) -> str:
         print(f"{label} is required.", file=sys.stderr)
         sys.exit(1)
     return value
+
+
+def get_client_id() -> str:
+    value = os.environ.get("YAHOO_CLIENT_ID", "").strip()
+    if value:
+        print("Using YAHOO_CLIENT_ID from the environment.")
+        return value
+    return require("Yahoo Client ID", input("Yahoo Client ID: ").strip())
+
+
+def get_client_secret() -> str:
+    value = os.environ.get("YAHOO_CLIENT_SECRET", "").strip()
+    if value:
+        print("Using YAHOO_CLIENT_SECRET from the environment.")
+        return value
+    return require(
+        "Yahoo Client Secret", getpass.getpass("Yahoo Client Secret (hidden): ").strip()
+    )
 
 
 def exchange_code(client_id: str, client_secret: str, redirect_uri: str, code: str) -> dict:
@@ -80,11 +113,15 @@ def set_secret(name: str, value: str) -> bool:
 
 def main() -> None:
     print("Yahoo OAuth2 setup - one-time, run from a terminal you trust.\n")
-
-    client_id = require("Yahoo Client ID", input("Yahoo Client ID: ").strip())
-    client_secret = require(
-        "Yahoo Client Secret", getpass.getpass("Yahoo Client Secret (hidden): ").strip()
+    print(
+        "Note: YAHOO_CLIENT_ID/YAHOO_CLIENT_SECRET are only picked up automatically "
+        "if they're set as Codespaces secrets (Settings -> Secrets and variables -> "
+        "Codespaces) - Actions secrets are a different store and aren't injected "
+        "here. Missing either just means you'll be prompted for it below.\n"
     )
+
+    client_id = get_client_id()
+    client_secret = get_client_secret()
     redirect_uri = input(f"Redirect URI [{DEFAULT_REDIRECT_URI}]: ").strip() or DEFAULT_REDIRECT_URI
 
     auth_params = urllib.parse.urlencode(
@@ -95,8 +132,15 @@ def main() -> None:
             "language": "en-us",
         }
     )
-    print("\n1. Open this URL, log in, and approve the app:\n")
-    print(f"   {AUTH_URL}?{auth_params}\n")
+    auth_url = f"{AUTH_URL}?{auth_params}"
+
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    auth_url_file = OUTPUT_DIR / "auth_url.txt"
+    auth_url_file.write_text(auth_url + "\n")
+
+    print(f"\n1. Open {auth_url_file} in the Codespaces editor (left file")
+    print("   explorer), copy the URL, open it in a new browser tab, log in,")
+    print("   and approve.\n")
     print(
         "2. Yahoo redirects you back to the redirect URI above with a\n"
         "   `?code=...` query parameter. The page itself may just show the\n"
@@ -123,6 +167,7 @@ def main() -> None:
         .strip()
         .lower()
     )
+    write_secrets_file = answer != "y"
     if answer == "y":
         ok = True
         ok &= set_secret("YAHOO_CLIENT_ID", client_id)
@@ -134,19 +179,33 @@ def main() -> None:
             print(
                 "\nAt least one secret could not be set automatically - gh may need "
                 "`gh auth refresh --scopes admin:repo_hook` first, or you may lack admin "
-                "access to the repo. Set the failed one(s) by hand at "
-                "https://github.com/chamaya00/fantasy-research-agent/settings/secrets/actions",
+                "access to the repo.",
                 file=sys.stderr,
             )
-            print(f"\nRefresh token, in case you need to paste it yourself:\n{refresh_token}")
-    else:
-        print(
-            "\nSet these three repo secrets by hand at "
-            "https://github.com/chamaya00/fantasy-research-agent/settings/secrets/actions/new :\n"
-            f"  YAHOO_CLIENT_ID       = {client_id}\n"
-            "  YAHOO_CLIENT_SECRET   = (the one you typed - not re-printed here)\n"
-            f"  YAHOO_REFRESH_TOKEN   = {refresh_token}"
+            write_secrets_file = True
+
+    if write_secrets_file:
+        secrets_file = OUTPUT_DIR / "secrets.txt"
+        secrets_file.write_text(
+            "Paste these into "
+            "https://github.com/chamaya00/fantasy-research-agent/settings/secrets/actions/new\n"
+            "(one secret per submission - the page only takes one at a time)\n\n"
+            f"YAHOO_CLIENT_ID={client_id}\n"
+            f"YAHOO_CLIENT_SECRET={client_secret}\n"
+            f"YAHOO_REFRESH_TOKEN={refresh_token}\n"
         )
+        print(f"\nWrote the values to {secrets_file} - open it in the editor and copy each into the repo's secrets page.")
+
+    print(
+        f"\n{OUTPUT_DIR}/ now holds your client secret and/or refresh token in "
+        "plain text. Open whatever you still need to copy from it first."
+    )
+    cleanup = input("Delete it now? [Y/n]: ").strip().lower()
+    if cleanup != "n":
+        shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
+        print("Deleted.")
+    else:
+        print(f"Left in place - delete {OUTPUT_DIR}/ yourself once you're done.")
 
 
 if __name__ == "__main__":
