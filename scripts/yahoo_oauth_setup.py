@@ -185,8 +185,8 @@ def main() -> None:
             write_secrets_file = True
 
     if write_secrets_file:
-        secrets_file = OUTPUT_DIR / "secrets.txt"
-        secrets_file.write_text(
+        credentials_file = OUTPUT_DIR / "credentials.txt"
+        credentials_file.write_text(
             "Paste these into "
             "https://github.com/chamaya00/fantasy-research-agent/settings/secrets/actions/new\n"
             "(one secret per submission - the page only takes one at a time)\n\n"
@@ -194,7 +194,7 @@ def main() -> None:
             f"YAHOO_CLIENT_SECRET={client_secret}\n"
             f"YAHOO_REFRESH_TOKEN={refresh_token}\n"
         )
-        print(f"\nWrote the values to {secrets_file} - open it in the editor and copy each into the repo's secrets page.")
+        print(f"\nWrote the values to {credentials_file} - open it in the editor and copy each into the repo's secrets page.")
 
     print(
         f"\n{OUTPUT_DIR}/ now holds your client secret and/or refresh token in "
