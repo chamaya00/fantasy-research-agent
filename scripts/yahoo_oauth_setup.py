@@ -26,8 +26,16 @@ instead of only being printed to the terminal, so you can open and copy
 from the Codespaces editor. Offers to delete that directory once you're
 done with it - it holds real secrets in plain text until then.
 
+`.devcontainer/devcontainer.json`'s `postAttachCommand` runs this script
+every time a Codespace on this repo is opened, so it's safe to invoke
+repeatedly: once a run completes successfully, it writes a marker file
+(`scripts/.yahoo_oauth_done`, gitignored) and every later run exits
+immediately instead of re-prompting. Pass `--force` to go through the flow
+again anyway (e.g. the refresh token was revoked or you're switching Yahoo
+apps).
+
 Usage:
-    python3 scripts/yahoo_oauth_setup.py
+    python3 scripts/yahoo_oauth_setup.py [--force]
 """
 
 import base64
@@ -46,6 +54,7 @@ DEFAULT_REDIRECT_URI = "https://chamaya00.github.io/fantasy-research-agent/"
 AUTH_URL = "https://api.login.yahoo.com/oauth2/request_auth"
 TOKEN_URL = "https://api.login.yahoo.com/oauth2/get_token"
 OUTPUT_DIR = Path(__file__).parent / ".oauth_output"
+DONE_MARKER = Path(__file__).parent / ".yahoo_oauth_done"
 
 
 def require(label: str, value: str) -> str:
@@ -112,6 +121,14 @@ def set_secret(name: str, value: str) -> bool:
 
 
 def main() -> None:
+    if DONE_MARKER.exists() and "--force" not in sys.argv:
+        print(
+            f"Already completed - {DONE_MARKER} exists. Re-run with --force "
+            "if you need a fresh refresh token (e.g. it was revoked, or "
+            "you're switching Yahoo apps)."
+        )
+        return
+
     print("Yahoo OAuth2 setup - one-time, run from a terminal you trust.\n")
     print(
         "Note: YAHOO_CLIENT_ID/YAHOO_CLIENT_SECRET are only picked up automatically "
@@ -195,6 +212,8 @@ def main() -> None:
             f"YAHOO_REFRESH_TOKEN={refresh_token}\n"
         )
         print(f"\nWrote the values to {credentials_file} - open it in the editor and copy each into the repo's secrets page.")
+
+    DONE_MARKER.write_text("Ran successfully - see git history/PR for when. Delete this file to re-run the flow.\n")
 
     print(
         f"\n{OUTPUT_DIR}/ now holds your client secret and/or refresh token in "
