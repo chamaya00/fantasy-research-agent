@@ -27,12 +27,16 @@ from the Codespaces editor. Offers to delete that directory once you're
 done with it - it holds real secrets in plain text until then.
 
 `.devcontainer/devcontainer.json`'s `postAttachCommand` runs this script
-every time a Codespace on this repo is opened, so it's safe to invoke
-repeatedly: once a run completes successfully, it writes a marker file
-(`scripts/.yahoo_oauth_done`, gitignored) and every later run exits
-immediately instead of re-prompting. Pass `--force` to go through the flow
-again anyway (e.g. the refresh token was revoked or you're switching Yahoo
-apps).
+(then scripts/yahoo_find_keys.py) every time a Codespace on this repo is
+opened, so it's safe to invoke repeatedly: once a run completes
+successfully it writes a marker file (`scripts/.yahoo_oauth_done`,
+gitignored), and every later run exits immediately instead of
+re-prompting - so does one where `YAHOO_REFRESH_TOKEN` is already set
+(e.g. as a Codespaces secret), even without that marker, since a fresh
+Codespace container never carries it over from a previous one. Either way,
+an automatic run never blocks on input. Pass `--force` to go through the
+flow again anyway (e.g. the refresh token was revoked or you're switching
+Yahoo apps).
 
 Usage:
     python3 scripts/yahoo_oauth_setup.py [--force]
@@ -121,11 +125,17 @@ def set_secret(name: str, value: str) -> bool:
 
 
 def main() -> None:
-    if DONE_MARKER.exists() and "--force" not in sys.argv:
+    already_have_token = bool(os.environ.get("YAHOO_REFRESH_TOKEN", "").strip())
+    if (DONE_MARKER.exists() or already_have_token) and "--force" not in sys.argv:
+        reason = (
+            f"{DONE_MARKER} exists"
+            if DONE_MARKER.exists()
+            else "YAHOO_REFRESH_TOKEN is already set (e.g. as a Codespaces secret)"
+        )
         print(
-            f"Already completed - {DONE_MARKER} exists. Re-run with --force "
-            "if you need a fresh refresh token (e.g. it was revoked, or "
-            "you're switching Yahoo apps)."
+            f"Already completed - {reason}. Re-run with --force if you need a "
+            "fresh refresh token (e.g. it was revoked, or you're switching Yahoo "
+            "apps)."
         )
         return
 
