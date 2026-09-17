@@ -12,6 +12,10 @@ season's numeric NFL game_key or scrape one out of a URL - Yahoo resolves
 "nfl" to the current season for you and returns only leagues/teams you're
 actually in.
 
+Also writes its output to scripts/.oauth_output/league_team_keys.txt
+(gitignored, same directory yahoo_oauth_setup.py uses) so it's easy to
+open and copy from the Codespaces editor rather than a terminal pane.
+
 Usage:
     python3 scripts/yahoo_find_keys.py
 """
@@ -22,6 +26,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from yahoo_data.client import YahooCredentialsError, fetch_json
+
+OUTPUT_DIR = Path(__file__).parent / ".oauth_output"
+KEYS_FILE = OUTPUT_DIR / "league_team_keys.txt"
 
 
 def _records_with(obj, marker_key: str) -> list[dict]:
@@ -53,18 +60,26 @@ def main() -> None:
         sys.exit(1)
 
     league_records = _records_with(leagues, "league_key")
-    print("League(s):")
+    lines = ["League(s):"]
     if not league_records:
-        print("  none found - are you in an NFL fantasy league this season?")
+        lines.append("  none found - are you in an NFL fantasy league this season?")
     for record in league_records:
-        print(f"  {record['league_key']}  ({record.get('name', '?')})")
+        lines.append(f"  {record['league_key']}  ({record.get('name', '?')})")
 
     team_records = _records_with(teams, "team_key")
-    print("\nYour team(s):")
+    lines.append("")
+    lines.append("Your team(s):")
     if not team_records:
-        print("  none found - do you manage a team in one of the leagues above?")
+        lines.append("  none found - do you manage a team in one of the leagues above?")
     for record in team_records:
-        print(f"  {record['team_key']}  ({record.get('name', '?')})")
+        lines.append(f"  {record['team_key']}  ({record.get('name', '?')})")
+
+    output = "\n".join(lines) + "\n"
+    print(output)
+
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    KEYS_FILE.write_text(output)
+    print(f"Also wrote this to {KEYS_FILE} - open it in the Codespaces editor to copy from there.")
 
 
 if __name__ == "__main__":

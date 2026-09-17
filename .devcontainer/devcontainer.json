@@ -1,5 +1,5 @@
 {
   "name": "fantasy-research-agent",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "postAttachCommand": "python3 scripts/yahoo_oauth_setup.py"
+  "postAttachCommand": "python3 scripts/yahoo_oauth_setup.py && python3 scripts/yahoo_find_keys.py"
 }
